@@ -1,0 +1,46 @@
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Python / venv
+__pycache__/
+*.pyc
+.pytest_cache/
+.venv/
+venv/
+
+# Node / frontend
+node_modules/
+.parcel-cache/
+.next/
+dist/
+build/
+
+# Editor / tooling
+.idea/
+.vscode/
+*.code-workspace
+
+# Env & secrets
+.env
+*.env.local
+*.env.*.local
+*.secret
+
+# Docker artifacts
+*.pid
+*.log
+logs/
+docker-compose.override.yml
+*/data/
+*/tmp/
+
+# Project specific generated data
+airbyte/workspace/
+airbyte/data/
+ghost/ghost-docker/data/
+ghost/ghost-docker/mysql/
+strapi/strapi-app/.cache/
+strapi/strapi-app/build/
+swirl/.swirl_cache/
+

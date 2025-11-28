@@ -1,0 +1,46 @@
+version: '3'
+
+services:
+  strapi:
+    container_name: strapi
+    image: strapi/strapi:3.6.2
+    environment:
+      DATABASE_CLIENT: postgres
+      DATABASE_HOST: db
+      DATABASE_PORT: 5432
+      DATABASE_NAME: strapi
+      DATABASE_USERNAME: strapi
+      DATABASE_PASSWORD: strapi
+      JWT_SECRET: 1234567890
+      ADMIN_JWT_SECRET: 1234567890
+      APP_KEYS: 1234567890
+      NODE_ENV: development
+    ports:
+      - 1337:1337
+    volumes:
+      - ./config:/opt/app/config
+      - ./src:/opt/app/src
+      - ./package.json:/opt/package.json
+      - ./yarn.lock:/opt/yarn.lock
+      - ./.env:/opt/app/.env
+      - ./public/uploads:/opt/app/public/uploads
+    depends_on:
+      - db
+    networks:
+      - knowledgebase
+
+  db:
+    container_name: postgres
+    image: postgres:15
+    restart: always
+    volumes:
+      - ./strapi-db:/var/lib/postgresql/data
+    environment:
+      POSTGRES_USER: strapi
+      POSTGRES_PASSWORD: strapi
+      POSTGRES_DB: strapi
+    networks:
+      - knowledgebase
+networks:
+  knowledgebase:
+    external: true
