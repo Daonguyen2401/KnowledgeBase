@@ -1,0 +1,26 @@
+version: '3.5'
+name: storage
+
+services:
+  pgvector:
+    container_name: pgvector
+    image: pgvector/pgvector:0.8.0-pg16-trixie
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      PGDATA: /data/postgres
+    volumes:
+       - pgvector:/data/postgres
+    ports:
+      - "5433:5432"
+    networks:
+      - knowledgebase
+    restart: unless-stopped
+
+volumes:
+  pgvector:
+    driver: local
+
+networks:
+  knowledgebase:
+    external: true
