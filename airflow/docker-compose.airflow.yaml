@@ -72,6 +72,15 @@ x-airflow-common:
     # See https://airflow.apache.org/docs/apache-airflow/stable/administration-and-deployment/logging-monitoring/check-health.html#scheduler-health-check-server
     # yamllint enable rule:line-length
     AIRFLOW__SCHEDULER__ENABLE_HEALTH_CHECK: 'true'
+    # DAG Parsing Configuration
+    # How often (in seconds) to scan the DAGs directory for new files. Default: 300 (5 minutes)
+    AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL: ${AIRFLOW__SCHEDULER__DAG_DIR_LIST_INTERVAL:-60}
+    # How often (in seconds) to refresh DAG bundle. Default: 300 (5 minutes)
+    AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL: ${AIRFLOW__DAG_PROCESSOR__REFRESH_INTERVAL:-60}
+    # Minimum interval (in seconds) between processing the same DAG file. Default: 30
+    AIRFLOW__DAG_PROCESSOR__MIN_FILE_PROCESS_INTERVAL: ${AIRFLOW__DAG_PROCESSOR__MIN_FILE_PROCESS_INTERVAL:-30}
+    # Timeout (in seconds) for parsing a single DAG file. Default: 50
+    AIRFLOW__DAG_PROCESSOR__DAG_FILE_PROCESSOR_TIMEOUT: ${AIRFLOW__DAG_PROCESSOR__DAG_FILE_PROCESSOR_TIMEOUT:-50}
     # WARNING: Use _PIP_ADDITIONAL_REQUIREMENTS option ONLY for a quick checks
     # for other purpose (development, test and especially production usage) build/extend Airflow image.
     _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
@@ -83,6 +92,8 @@ x-airflow-common:
     - ${AIRFLOW_PROJ_DIR:-.}/config:/opt/airflow/config
     - ${AIRFLOW_PROJ_DIR:-.}/plugins:/opt/airflow/plugins
   user: "${AIRFLOW_UID:-50000}:0"
+  networks:
+    - knowledgebase
   depends_on:
     &airflow-common-depends-on
     redis:
@@ -105,6 +116,8 @@ services:
       retries: 5
       start_period: 5s
     restart: always
+    networks:
+      - knowledgebase
 
   redis:
     # Redis is limited to 7.2-bookworm due to licencing change
@@ -119,6 +132,8 @@ services:
       retries: 50
       start_period: 30s
     restart: always
+    networks:
+      - knowledgebase
 
   airflow-apiserver:
     <<: *airflow-common
@@ -339,3 +354,8 @@ services:
 
 volumes:
   postgres-db-volume:
+
+networks:
+  knowledgebase:
+    name: knowledgebase
+    external: true

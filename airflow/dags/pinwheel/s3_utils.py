@@ -1,25 +1,104 @@
-"""
-Utility helpers for downloading objects from S3 (or S3-compatible services)
-and saving them to a local file path.
-
-Expected structure of the ``s3_config`` argument (passed directly as a dict):
-
-    {
-        "aws_access_key_id": "YOUR_ACCESS_KEY",
-        "aws_secret_access_key": "YOUR_SECRET_KEY",
-        "endpoint_url": "http://localhost:9000"
-    }
-
-You now pass the **bucket name separately** to ``get_file_from_s3`` instead
-of putting it inside ``s3_config``.
-"""
-
 from pathlib import Path
 from typing import Dict, Optional
 from urllib.parse import urlparse
 
 import boto3
 from botocore.exceptions import ClientError
+
+try:
+    from airflow.hooks.base import BaseHook
+except ImportError:
+    # For local testing without Airflow
+    BaseHook = None
+
+
+def get_s3_config_from_airflow_connection(conn_id: str) -> Dict[str, Optional[str]]:
+    """
+    Lấy thông tin AWS (ACCESS_KEY, SECRET_KEY, endpoint_url) từ Airflow Connection.
+
+    Args:
+        conn_id: Connection ID được định nghĩa trong Airflow Connections.
+
+    Returns:
+        Dict chứa thông tin S3 config với các keys:
+            - aws_access_key_id
+            - aws_secret_access_key
+            - endpoint_url (nếu có trong extra)
+            - region_name (nếu có trong extra)
+
+    Raises:
+        ImportError: Nếu không thể import BaseHook (khi chạy ngoài Airflow context).
+        ValueError: Nếu connection không tồn tại hoặc thiếu thông tin cần thiết.
+
+    Example:
+        Trong Airflow Connection UI, tạo connection với:
+        - Connection Id: 's3_connection'
+        - Connection Type: 'Generic'
+        - Login: 'your_access_key'
+        - Password: 'your_secret_key'
+        - Extra (JSON): {"endpoint_url": "http://localhost:9000", "region_name": "us-east-1"}
+
+        Sau đó sử dụng:
+        >>> s3_config = get_s3_config_from_airflow_connection('s3_connection')
+        >>> s3_config
+        {
+            'aws_access_key_id': 'your_access_key',
+            'aws_secret_access_key': 'your_secret_key',
+            'endpoint_url': 'http://localhost:9000',
+            'region_name': 'us-east-1'
+        }
+    """
+    if BaseHook is None:
+        raise ImportError(
+            "BaseHook không thể import. Hàm này chỉ hoạt động trong Airflow context."
+        )
+
+    # Lấy connection từ Airflow
+    connection = BaseHook.get_connection(conn_id)
+
+    if not connection:
+        raise ValueError(f"Connection '{conn_id}' không tồn tại.")
+
+    # Parse extra nếu có (thường là JSON string)
+    extra = {}
+    if connection.extra:
+        try:
+            import json
+            if isinstance(connection.extra, str):
+                extra = json.loads(connection.extra)
+            elif isinstance(connection.extra, dict):
+                extra = connection.extra
+        except (json.JSONDecodeError, TypeError):
+            # Nếu không parse được JSON, giữ nguyên
+            pass
+
+    # Xây dựng config dict
+    s3_config: Dict[str, Optional[str]] = {
+        "aws_access_key_id": connection.login or extra.get("aws_access_key_id"),
+        "aws_secret_access_key": connection.password or extra.get("aws_secret_access_key"),
+    }
+
+    # Thêm endpoint_url từ extra nếu có
+    if "endpoint_url" in extra:
+        s3_config["endpoint_url"] = extra["endpoint_url"]
+    elif connection.host:
+        # Nếu có host trong connection, có thể dùng làm endpoint_url
+        scheme = connection.schema or "http"
+        port = f":{connection.port}" if connection.port else ""
+        s3_config["endpoint_url"] = f"{scheme}://{connection.host}{port}"
+
+    # Thêm region_name từ extra nếu có
+    if "region_name" in extra:
+        s3_config["region_name"] = extra["region_name"]
+
+    # Kiểm tra các thông tin bắt buộc
+    if not s3_config.get("aws_access_key_id") or not s3_config.get("aws_secret_access_key"):
+        raise ValueError(
+            f"Connection '{conn_id}' thiếu thông tin ACCESS_KEY hoặc SECRET_KEY. "
+            "Vui lòng kiểm tra Login và Password trong Airflow Connection."
+        )
+
+    return s3_config
 
 
 def get_file_from_s3(
@@ -94,23 +173,20 @@ if __name__ == "__main__":
     """
 
     sample_s3_config: Dict[str, Optional[str]] = {
-        # TODO: fill in your real values or read from environment variables.
-        # Only connection details are kept in this dict.
-        "aws_access_key_id": "YOUR_ACCESS_KEY",
-        "aws_secret_access_key": "YOUR_SECRET_KEY",
+        "aws_access_key_id": "demouseraccesskey",
+        "aws_secret_access_key": "jV9vt2uREobOcNSWFaqZ3dWFmAc2nFPhu1mVlrvO",
         "endpoint_url": "http://localhost:9000",
     }
 
-    sample_bucket = "my-bucket-name"
+    sample_bucket = "demo-rag"
 
-    # Example object key inside the bucket
-    sample_key = "path/to/file.pdf"
+    sample_key = "Bankdocument/BankRelationships.pdf"
 
     downloaded_path = get_file_from_s3(
         s3_config=sample_s3_config,
         s3_bucket=sample_bucket,
         s3_file_name=sample_key,
-        local_filename=None,  # or set to a specific local path
+        local_filename='./hehe.pdf',  # or set to a specific local path
     )
 
     print(f"Downloaded to {downloaded_path}")
