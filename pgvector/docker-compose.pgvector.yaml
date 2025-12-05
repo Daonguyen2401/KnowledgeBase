@@ -8,6 +8,7 @@ services:
     environment:
       POSTGRES_USER: ${POSTGRES_USER:-postgres}
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-demodb}
       PGDATA: /data/postgres
     volumes:
        - pgvector:/data/postgres

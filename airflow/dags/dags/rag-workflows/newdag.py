@@ -4,10 +4,11 @@ Simple RAG DAG with 3 tasks printing Hello World
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from pinwheel.s3_utils import get_s3_config_from_airflow_connection, get_file_from_s3
-from pinwheel.database_utils import get_postgres_conn_info
+from pinwheel.s3_utils import get_s3_config_from_airflow_connection
 from rag.loading.loading_builder import load_documents
-
+from rag.chunking.chunking_builder import chunk_documents
+from rag.indexing.indexing_builder import index_documents_with_embeddings_config
+from pinwheel.database_utils import parse_pgvector_connection_url
 # Default arguments for the DAG
 default_args = {
     'owner': 'airflow',
@@ -38,9 +39,27 @@ task_1 = PythonOperator(
 task_2 = PythonOperator(
     task_id='load_documents',
     python_callable=load_documents,
-    op_kwargs= {'s3_config': task_1.output, 's3_bucket': 'demo-rag', 's3_file_path': 'Bankdocument/BankRelationships.pdf', 'type': 'pdf_pypdf'},
+    op_kwargs= {'s3_config': task_1.output, 's3_bucket': 'demo-rag', 's3_file_path': 'BankDocument/BankRelationships.pdf', 'type': 'pdf_pypdf'},
     dag=dag,
 )
-task_1>> task_2
+task_3 = PythonOperator(
+    task_id='chunk_documents',
+    python_callable=chunk_documents,
+    op_kwargs={'documents': task_2.output, 'type': 'recursive_character'},
+    dag=dag,
+)
+task_4 = PythonOperator(
+    task_id='get_pgvector_conn_info',
+    python_callable=parse_pgvector_connection_url,
+    op_kwargs={'conn_id': 'pgvector_conn'},
+    dag=dag,
+)
+task_5 = PythonOperator(
+    task_id='index_documents',
+    python_callable=index_documents_with_embeddings_config,
+    op_kwargs={'type': 'pgvector', 'documents': task_3.output, 'embeddings_config': {'type': 'openai', 'model': 'text-embedding-3-small', 'api_key': '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'}, 'collection_name': 'demo_rag', 'connection_url': task_4.output},
+    dag=dag,
+)   
+task_1>> task_2 >> task_3 >> task_4 >> task_5
 
 

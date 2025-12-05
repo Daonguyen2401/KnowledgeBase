@@ -1,9 +1,12 @@
 
 import logging
-from typing import Dict, Optional
+from typing import Dict, Optional, List, Union
 
+from langchain_core.documents import Document
+from langchain_core.load import dumps, loads
 from pinwheel.s3_utils import get_file_from_s3
 from rag.loading.build_loading import DOCUMENT_LOADERS
+from rag.common.utils import filter_kwargs
 logger = logging.getLogger(__name__)
 
 def get_document_loader(type: str, **kwargs):
@@ -40,4 +43,11 @@ def load_documents(
     filepath = get_file_from_s3(s3_config, s3_bucket, s3_file_path)
 
     document_loader = get_document_loader(type)
-    return document_loader(filepath, **kwargs)
+    kwargs = filter_kwargs(document_loader.__init__, kwargs)
+    documents = document_loader(filepath, **kwargs)
+    
+    # Serialize Document objects for XCom transmission
+    serialized_documents = dumps(documents)
+    logger.debug(f"[load_documents] Serialized {len(documents)} documents for XCom")
+    
+    return serialized_documents

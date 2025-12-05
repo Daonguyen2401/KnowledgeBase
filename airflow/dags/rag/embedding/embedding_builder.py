@@ -1,5 +1,6 @@
 import logging
-from build_embedder import EMBEDDERS
+from rag.embedding.build_embedder import EMBEDDERS
+from rag.common.utils import filter_kwargs
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +24,7 @@ def get_embedder(type: str):
     return embedder
 
 
-def load_embedder(
+def create_embedder(
     type: str,
     model: str,
     api_key: str,
@@ -40,6 +41,7 @@ def load_embedder(
         Embedder instance ready to use.
     """
     embedder_creator = get_embedder(type)
+    kwargs = filter_kwargs(embedder_creator.__init__, kwargs)
     embedder = embedder_creator(model=model, api_key=api_key, **kwargs)
     
     logger.debug(

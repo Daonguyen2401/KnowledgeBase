@@ -1,5 +1,11 @@
 import logging
-from build_indexing import VECTOR_STORES
+from typing import Union, List
+
+from langchain_core.documents import Document
+from langchain_core.load import loads
+from rag.indexing.build_indexing import VECTOR_STORES
+from rag.common.utils import filter_kwargs
+from rag.embedding.embedding_builder import create_embedder
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +31,7 @@ def get_indexer(type: str):
 
 def index_documents(
     type: str,
-    documents,
+    documents: Union[List[Document], str],
     embeddings,
     collection_name: str,
     connection_url: str,
@@ -36,16 +42,24 @@ def index_documents(
 
     Args:
         type: Vector store type key registered via ``register_vector_store``.
+        documents: List of Document objects or serialized string from XCom.
         embeddings: Embeddings instance to use for vectorization.
         collection_name: Name of the collection/table in the vector store.
-        connection: Connection string for the database/storage.
+        connection_url: Connection string for the database/storage.
+        **kwargs: Additional arguments passed to the vector store.
 
     Returns:
-        Vector store instance ready to use.
+        Result from vector_store.add_documents().
     """
+    # Deserialize if documents is a serialized string (from XCom)
+    if isinstance(documents, str):
+        documents = loads(documents)
+        logger.debug(f"[index_documents] Deserialized documents from XCom")
+    
     indexer_creator = get_indexer(type)
+    kwargs = filter_kwargs(indexer_creator.__init__, kwargs)
     vector_store = indexer_creator(
-        embeddings=embeddings,
+        embedding_model=embeddings,
         collection_name=collection_name,
         connection_url=connection_url,
         **kwargs
@@ -53,9 +67,17 @@ def index_documents(
     result = vector_store.add_documents(documents)
     
     logger.debug(
-        f"[load_indexer] Loaded vector store type: {type} with collection: {collection_name}"
+        f"[index_documents] Indexed documents to vector store type: {type} with collection: {collection_name}"
     )
     return result
 
-
-
+def index_documents_with_embeddings_config(
+    type: str,
+    documents: Union[List[Document], str],
+    embeddings_config: dict, # {type: str, model: str, api_key: str, **kwargs}
+    collection_name: str,
+    connection_url: str,
+    **kwargs,
+):
+    embeddings = create_embedder(**embeddings_config)
+    return index_documents(type, documents, embeddings, collection_name, connection_url, **kwargs)

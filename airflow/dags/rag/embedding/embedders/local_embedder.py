@@ -1,5 +1,4 @@
-from langchain.embeddings import OpenAIEmbeddings
-from dags.rag.embedding.build_embedder import register_embedder
+from rag.embedding.build_embedder import register_embedder
 from langchain.embeddings.base import Embeddings
 import requests
 
@@ -24,9 +23,9 @@ class CustomEmbeddings(Embeddings):
         return response.json()["data"][0]["embedding"]
 
 @register_embedder("local-gamma")
-def create_embedding_gamma_embedder(model: str, api_key: str):
+def create_embedding_gamma_embedder(model: str, api_key: str,**kwargs):
     base_url = f'https://ai-platform-uat.msb.com.vn/embeddinggamma/v1/embeddings'
-    return CustomEmbeddings(model=model,api_url=base_url)
+    return CustomEmbeddings(model=model,api_url=base_url,**kwargs)
 
 if __name__ == "__main__":
     embeddings = create_embedding_gamma_embedder(model="local-sentence-transformer", api_key="")

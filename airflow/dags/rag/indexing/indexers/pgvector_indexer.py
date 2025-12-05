@@ -1,4 +1,4 @@
-from build_indexing import register_vector_store
+from rag.indexing.build_indexing import register_vector_store
 from langchain_postgres import PGVector
 import logging
 

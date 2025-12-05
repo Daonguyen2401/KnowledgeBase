@@ -1,4 +1,4 @@
-FROM apache/airflow:3.0.2-python3.12
+FROM apache/airflow:3.1.3-python3.12
 
 USER root
 
@@ -30,4 +30,4 @@ RUN pip install --no-cache-dir setuptools==69.0.3
 
 # Then install Python packages
 COPY requirements.txt /tmp/requirements.txt
-RUN pip install --no-cache-dir -r /tmp/requirements.txt
+RUN pip install -r /tmp/requirements.txt

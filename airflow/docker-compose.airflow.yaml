@@ -83,9 +83,11 @@ x-airflow-common:
     AIRFLOW__DAG_PROCESSOR__DAG_FILE_PROCESSOR_TIMEOUT: ${AIRFLOW__DAG_PROCESSOR__DAG_FILE_PROCESSOR_TIMEOUT:-50}
     # WARNING: Use _PIP_ADDITIONAL_REQUIREMENTS option ONLY for a quick checks
     # for other purpose (development, test and especially production usage) build/extend Airflow image.
-    _PIP_ADDITIONAL_REQUIREMENTS: ${_PIP_ADDITIONAL_REQUIREMENTS:-}
+    _PIP_ADDITIONAL_REQUIREMENTS: "pypdf dag-factory==1.0.1"
     # The following line can be used to set a custom config file, stored in the local config folder
     AIRFLOW_CONFIG: '/opt/airflow/config/airflow.cfg'
+    #LANGCHAIN
+    LANGCHAIN_ALLOWED_DESERIALIZATION_CLASSES: "langchain_core.documents.base.Document,langchain_core.documents.base.DocumentChunk"
   volumes:
     - ${AIRFLOW_PROJ_DIR:-.}/dags:/opt/airflow/dags
     - ${AIRFLOW_PROJ_DIR:-.}/logs:/opt/airflow/logs
@@ -103,7 +105,7 @@ x-airflow-common:
 
 services:
   postgres:
-    image: postgres:15
+    image: postgres:16
     environment:
       POSTGRES_USER: airflow
       POSTGRES_PASSWORD: airflow

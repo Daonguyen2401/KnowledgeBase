@@ -4,7 +4,7 @@ from langchain_community.document_loaders import PyPDFLoader
 from langchain_core.documents import Document
 from typing import List
 import logging
-
+from rag.common.utils import filter_kwargs
 logger = logging.getLogger(__name__)
 
 # @register_document_loader("pdf_docling")

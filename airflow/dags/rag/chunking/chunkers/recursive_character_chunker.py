@@ -1,4 +1,4 @@
-from build_chunking import register_text_splitter
+from rag.chunking.build_chunking import register_text_splitter
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_core.documents import Document
 from typing import List
