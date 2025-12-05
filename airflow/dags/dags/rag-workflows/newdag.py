@@ -57,7 +57,7 @@ task_4 = PythonOperator(
 task_5 = PythonOperator(
     task_id='index_documents',
     python_callable=index_documents_with_embeddings_config,
-    op_kwargs={'type': 'pgvector', 'documents': task_3.output, 'embeddings_config': {'type': 'openai', 'model': 'text-embedding-3-small', 'api_key': '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'}, 'collection_name': 'demo_rag', 'connection_url': task_4.output},
+    op_kwargs={'type': 'pgvector', 'documents': task_3.output, 'embeddings_config': {'type': 'openai', 'model': 'text-embedding-3-small', 'api_key': ''}, 'collection_name': 'demo_rag', 'connection_url': task_4.output},
     dag=dag,
 )   
 task_1>> task_2 >> task_3 >> task_4 >> task_5
