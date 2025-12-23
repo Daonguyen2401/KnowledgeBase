@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+  retriever-api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: retriever-api
+    ports:
+      - "${RETRIEVER_API_PORT:-8002}:8000"
+    environment:
+      # Python path to include rag module
+      PYTHONPATH: /opt:/app
+      # Add any other environment variables here
+      # OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    volumes:
+      # Mount rag module from parent directory
+      - ../rag:/opt/rag:ro
+      # Mount app code for development (optional, comment out for production)
+      # - ./app:/app/app:ro
+    networks:
+      - knowledgebase
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+networks:
+  knowledgebase:
+    name: knowledgebase
+    external: true
+

@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException
 
-from app.schemas.retrieve import (
+from app.schemas.retrieve_schema import (
     DocumentResponse,
     DocumentWithScoreResponse,
     SimilaritySearchRequest,
@@ -8,8 +8,8 @@ from app.schemas.retrieve import (
     SimilaritySearchWithScoreResponse,
 )
 
-from airflow.dags.rag.embedding.embedding_builder import load_embedder
-from airflow.dags.rag.indexing.indexing_builder import get_indexer
+from rag.embedding.embedding_builder import create_embedder as load_embedder
+from rag.indexing.indexing_builder import get_indexer
 
 
 router = APIRouter(prefix="/retrieve", tags=["retrieve"])
@@ -22,10 +22,10 @@ def _get_vector_store(req: SimilaritySearchRequest):
     """
     try:
         embedder = load_embedder(
-            type=req.embedder_type,
-            model=req.embedder_model,
-            api_key=req.embedder_api_key or "",
-            **(req.embedder_extra or {}),
+            type=req.embedder.type,
+            model=req.embedder.model,
+            api_key=req.embedder.api_key or "",
+            **(req.embedder.extra or {}),
         )
 
         indexer_creator = get_indexer(req.vector_store_type)

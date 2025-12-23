@@ -3,6 +3,14 @@ from typing import Any, Dict, List, Optional
 from pydantic import BaseModel
 
 
+class EmbedderConfig(BaseModel):
+    """Configuration for the embedding model."""
+    type: str = "openai"
+    model: str = "text-embedding-3-small"
+    api_key: Optional[str] = ""
+    extra: Dict[str, Any] = {}
+
+
 class SimilaritySearchRequest(BaseModel):
     query: str
     k: int = 4
@@ -12,11 +20,8 @@ class SimilaritySearchRequest(BaseModel):
     collection_name: str
     connection_url: str
 
-    # Embedder config
-    embedder_type: str = "local-gamma"
-    embedder_model: str = "local-sentence-transformer"
-    embedder_api_key: Optional[str] = ""
-    embedder_extra: Dict[str, Any] = {}
+    # Embedder config (nested)
+    embedder: EmbedderConfig = EmbedderConfig()
 
     # Extra kwargs forwarded to the vector store constructor
     vector_store_extra: Dict[str, Any] = {}
