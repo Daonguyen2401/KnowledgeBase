@@ -1,0 +1,8 @@
+
+machine_learning:
+  tasks:
+    - task_id: "load"
+      operator: airflow.operators.bash.BashOperator
+      bash_command: "echo machine_larning"
+      dependencies:
+      - transform

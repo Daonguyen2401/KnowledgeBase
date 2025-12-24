@@ -1,0 +1,49 @@
+default:
+  default_args:
+    owner: "airflow"
+    depends_on_past: false
+    email_on_failure: false
+    email_on_retry: false
+    retries: 1
+    retry_delay: 300  # seconds (5 minutes)
+    start_date: 2025-12-11
+
+demo_two_dag_two:
+  description: "Demo RAG pipeline dùng dag-factory"
+  schedule: null
+  catchup: false
+  tags: ["demo", "rag"]
+  params:
+    s3_file_path: "BankDocument/BankRelationships.pdf"
+  tasks:
+    - task_id: load_documents
+      operator: airflow.operators.python.PythonOperator
+      python_callable: rag_function.load.load_documents_task
+      op_kwargs:
+        conn_id: "minio_conn" #Edit theo tenant
+        s3_bucket: "demo-rag" #Edit theo tenant
+        s3_file_path: "{{params.s3_file_path }}" 
+        type: "pdf_pypdf" #Editable
+
+    - task_id: chunk_documents
+      operator: airflow.operators.python.PythonOperator
+      python_callable: rag_function.chunk.chunk_documents_task
+      dependencies: [load_documents]
+      op_kwargs:
+        documents: "{{ ti.xcom_pull(task_ids='load_documents') }}"
+        type: "recursive_character" #Editable
+        
+    - task_id: index_documents
+      operator: airflow.operators.python.PythonOperator
+      python_callable: rag_function.index.index_documents_task
+      dependencies: [chunk_documents]
+      op_kwargs:
+        conn_id: "pgvector_conn" #Edit theo tenant
+        documents: "{{ ti.xcom_pull(task_ids='chunk_documents') }}"
+        type: "pgvector" #Editable
+        embeddings_config:
+          type: "openai" #Editable
+          model: "text-embedding-3-small" #Editable
+          #ToDo : Save in Airflow Variable
+          api_key: "SAMPLE_API" #Editable
+        collection_name: "demo_rag" #Editable

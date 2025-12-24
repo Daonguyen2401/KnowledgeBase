@@ -4,7 +4,8 @@ Simple RAG DAG with 3 tasks printing Hello World
 from datetime import datetime, timedelta
 from airflow import DAG
 from airflow.operators.python import PythonOperator
-from pinwheel.s3_utils import get_s3_config_from_airflow_connection, get_file_from_s3
+from pinwheel.s3_utils import get_s3_config_from_airflow_connection
+from rag.common.utils import get_file_from_s3
 from pinwheel.database_utils import get_postgres_conn_info
 
 # Default arguments for the DAG
